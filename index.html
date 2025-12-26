@@ -23,7 +23,7 @@
             overflow-x: hidden;
         }
 
-        /* --- ADVANCED LANDING PAGE --- */
+        /* --- LANDING PAGE --- */
         #landingPage {
             position: fixed;
             inset: 0;
@@ -110,7 +110,6 @@
             box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.2);
         }
 
-        /* --- ANIME ENGINE PANEL --- */
         .anime-panel {
             background: linear-gradient(135deg, rgba(188, 19, 254, 0.1), rgba(255, 0, 193, 0.05));
             border: 1px solid rgba(188, 19, 254, 0.3);
@@ -138,6 +137,7 @@
             color: white;
             outline: none;
             transition: 0.3s;
+            resize: none;
         }
 
         .glass-input:focus {
@@ -156,11 +156,24 @@
             border: none;
             cursor: pointer;
             transition: 0.3s;
+            color: white;
         }
 
         .gen-button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* --- SCANLINE EFFECT --- */
+        /* --- RESULTS SECTION --- */
+        .result-frame {
+            position: relative;
+            min-height: 350px;
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
         .scanline {
             width: 100%;
             height: 100px;
@@ -170,30 +183,18 @@
             position: absolute;
             bottom: 100%;
             animation: scan 4s linear infinite;
+            pointer-events: none;
         }
 
         @keyframes scan {
             0% { bottom: 100%; }
             100% { bottom: -100px; }
         }
-
-        .result-frame {
-            position: relative;
-            min-height: 300px;
-            background: #000;
-            border-radius: 20px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
     </style>
 </head>
 <body>
 
     <div id="landingPage">
-        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
         <h1 class="hero-glitch">DTZ AI</h1>
         <p class="text-gray-500 font-mono text-xs tracking-[10px] uppercase mt-2">Next Gen Image Synthesis</p>
         <button class="enter-btn" onclick="enterApp()">INITIALIZE</button>
@@ -208,8 +209,8 @@
         </header>
 
         <nav class="nav-tabs">
-            <div class="tab-btn active" id="tab-anime" onclick="switchMode('anime')">ANIME GEN</div>
-            <div class="tab-btn" id="tab-edit" onclick="switchMode('edit')">NEURAL EDIT</div>
+            <button class="tab-btn active" id="tab-anime" onclick="switchMode('anime')">ANIME GEN</button>
+            <button class="tab-btn" id="tab-edit" onclick="switchMode('edit')">NEURAL EDIT</button>
         </nav>
 
         <main class="px-5">
@@ -219,11 +220,8 @@
                     <i class="fas fa-bolt text-magenta-500"></i>
                 </div>
                 <label class="text-[10px] text-gray-400 uppercase tracking-widest block mb-2">Visual Script</label>
-                <textarea id="animePrompt" class="glass-input h-32" placeholder="e.g. futuristic samurai girl in neo-tokyo, 8k, masterpiece, cinematic lighting..."></textarea>
-                
-                <button id="genBtn" class="gen-button" onclick="generateAnime()">
-                    GENERATE ANIME
-                </button>
+                <textarea id="animePrompt" class="glass-input h-32" placeholder="e.g. futuristic samurai girl in neo-tokyo..."></textarea>
+                <button id="genBtnAnime" class="gen-button" onclick="generateImage('anime')">GENERATE ANIME</button>
             </div>
 
             <div id="editPanel" class="hidden anime-panel" style="border-color: var(--neon-cyan);">
@@ -231,10 +229,10 @@
                 <div class="border-2 border-dashed border-cyan-500/30 rounded-xl p-8 text-center cursor-pointer mb-4" onclick="document.getElementById('fileInput').click()">
                     <i class="fas fa-upload text-cyan-500 mb-2"></i>
                     <p class="text-xs">Upload Master Image</p>
-                    <input type="file" id="fileInput" class="hidden">
+                    <input type="file" id="fileInput" class="hidden" accept="image/*">
                 </div>
                 <textarea id="editPrompt" class="glass-input h-24" placeholder="Modify image..."></textarea>
-                <button class="gen-button" style="background: var(--neon-cyan); color:black" onclick="generateAnime()">APPLY EDITS</button>
+                <button id="genBtnEdit" class="gen-button" style="background: var(--neon-cyan); color:black" onclick="generateImage('edit')">APPLY EDITS</button>
             </div>
 
             <div class="mb-20 px-2">
@@ -244,7 +242,7 @@
                         <i class="fas fa-robot text-4xl mb-4"></i>
                         <p class="text-[10px] font-mono uppercase">System Idle: Awaiting Input</p>
                     </div>
-                    <img id="resultImage" class="hidden w-full h-full object-cover">
+                    <img id="resultImage" class="hidden w-full h-full object-contain">
                     
                     <div id="loader" class="hidden flex flex-col items-center">
                         <div class="w-10 h-10 border-2 border-magenta-500 border-t-transparent rounded-full animate-spin"></div>
@@ -258,86 +256,79 @@
                 </div>
             </div>
         </main>
-
-        <footer class="absolute bottom-5 w-full text-center">
-            <p class="text-[9px] text-gray-600 font-mono tracking-widest">DTZ NEURAL CORE V3.0 • ENCRYPTED CONNECTION</p>
-        </footer>
     </div>
 
     <script>
-        // Landing Page Logic
         function enterApp() {
             document.getElementById('landingPage').style.transform = 'translateY(-100%)';
         }
 
-        // Mode Switching
         function switchMode(mode) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('tab-' + mode).classList.add('active');
             
-            if(mode === 'anime') {
-                document.getElementById('animePanel').classList.remove('hidden');
-                document.getElementById('editPanel').classList.add('hidden');
-            } else {
-                document.getElementById('animePanel').classList.add('hidden');
-                document.getElementById('editPanel').classList.remove('hidden');
-            }
+            const isAnime = mode === 'anime';
+            document.getElementById('animePanel').classList.toggle('hidden', !isAnime);
+            document.getElementById('editPanel').classList.toggle('hidden', isAnime);
         }
 
-        // Advanced AI Generation
-        async function generateAnime() {
-            const prompt = document.getElementById('animePrompt').value || document.getElementById('editPrompt').value;
+        async function generateImage(mode) {
+            const promptId = mode === 'anime' ? 'animePrompt' : 'editPrompt';
+            const btnId = mode === 'anime' ? 'genBtnAnime' : 'genBtnEdit';
+            const prompt = document.getElementById(promptId).value;
+            
             if(!prompt) return alert("System requires visual script (prompt)");
 
-            const genBtn = document.getElementById('genBtn');
+            const btn = document.getElementById(btnId);
             const loader = document.getElementById('loader');
             const placeholder = document.getElementById('resultPlaceholder');
             const img = document.getElementById('resultImage');
             const actions = document.getElementById('actionRow');
 
-            // Set UI to Loading
-            genBtn.disabled = true;
-            genBtn.innerText = "PROCESSING...";
+            // UI State: Loading
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "PROCESSING...";
             loader.classList.remove('hidden');
             placeholder.classList.add('hidden');
             img.classList.add('hidden');
             actions.classList.add('hidden');
 
             try {
-                const response = await fetch('/api/grid-plus', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        // Automatically inject high-quality anime tags for Advanced mode
-                        prompt: `anime style, masterpiece, high quality, highly detailed, ${prompt}`,
-                        imageUrl: null // Handle edit mode logic here if needed
-                    })
-                });
+                /* NOTE FOR DEPLOYMENT: 
+                   To use a real AI, replace the 'mockResponse' logic with your actual fetch call.
+                */
+                const mockResponse = await new Promise(resolve => 
+                    setTimeout(() => resolve({ image_url: `https://picsum.photos/seed/${Math.random()}/800/1000` }), 2500)
+                );
 
-                const data = await response.json();
-
-                if(data.image_url) {
-                    img.src = data.image_url;
-                    img.classList.remove('hidden');
-                    actions.classList.remove('hidden');
-                } else {
-                    alert("Neural engine error: " + data.error);
+                if(mockResponse.image_url) {
+                    img.src = mockResponse.image_url;
+                    img.onload = () => {
+                        img.classList.remove('hidden');
+                        loader.classList.add('hidden');
+                        actions.classList.remove('hidden');
+                    };
                 }
             } catch (e) {
-                alert("Core failure: Check connection");
-            } finally {
+                alert("Core failure: System synchronization lost.");
                 loader.classList.add('hidden');
-                genBtn.disabled = false;
-                genBtn.innerText = "GENERATE ANIME";
+                placeholder.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
         }
 
         function downloadImage() {
+            const imgSrc = document.getElementById('resultImage').src;
             const link = document.createElement('a');
-            link.href = document.getElementById('resultImage').src;
-            link.download = `DTZ-ANIME-${Date.now()}.png`;
+            link.href = imgSrc;
+            link.download = `DTZ-AI-${Date.now()}.png`;
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>
-</html>
+    </html>
